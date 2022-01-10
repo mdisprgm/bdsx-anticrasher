@@ -5,3 +5,8 @@ NPM에 업로드하지 않습니다.<br>
 
 BDSX plugin to prevent Crasher<br>
 I don't publish this plugin on NPM.
+
+
+# License
+
+MIT
