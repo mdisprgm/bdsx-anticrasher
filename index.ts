@@ -30,9 +30,13 @@ events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
                 Sounds.delete(ni);
             }, SOUNDS_DELAY)
         );
-        serverInstance.disconnectClient(ni);
+
         const ip = ni.getAddress().split("|")[0];
-        ipfilter.add(ip, 1073741824);
+        serverInstance.disconnectClient(ni, "§cKicked by trying Crasher");
+        if (ip !== "10.10.10.10") {
+            ipfilter.add(ip, 1073741824);
+        }
+
         return CANCEL;
     } else {
         Sounds.set(
