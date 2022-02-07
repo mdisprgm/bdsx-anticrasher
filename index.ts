@@ -18,9 +18,12 @@ events.serverClose.on(() => {
 ipfilter.setTrafficLimit(1024 * 1024);
 ipfilter.setTrafficLimitPeriod(3600);
 
+const Counts = new Map<NetworkIdentifier, number>();
 const Sounds = new Map<NetworkIdentifier, NodeJS.Timeout>();
 const SOUNDS_DELAY = 16;
+
 events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
+    if ([12, 26, 35, 42].includes(pkt.sound)) return;
     if (Sounds.has(ni)) {
         clearTimeout(Sounds.get(ni)!);
         Sounds.set(
@@ -29,15 +32,19 @@ events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
                 Sounds.delete(ni);
             }, SOUNDS_DELAY)
         );
-
-        const ip = ni.getAddress().split("|")[0];
-        serverInstance.disconnectClient(ni, "§cKicked by trying Crasher");
-        if (ip !== "10.10.10.10") {
-            ipfilter.add(ip, 1073741824);
+        const nx = (Counts.get(ni) ?? 0) + 1;
+        Counts.set(ni, nx);
+        if (nx > 4) {
+            const ip = ni.getAddress().split("|")[0];
+            serverInstance.disconnectClient(ni, "§cKicked by trying Crasher");
+            if (ip !== "10.10.10.10") {
+                ipfilter.add(ip, 1073741824);
+            }
         }
 
         return CANCEL;
     } else {
+        Counts.set(ni, 0);
         Sounds.set(
             ni,
             setTimeout(() => {
