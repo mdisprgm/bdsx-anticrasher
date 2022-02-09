@@ -23,7 +23,7 @@ const COUNT = new Map<NetworkIdentifier, number>(); //warning COUNT
 
 const Banned = new Map<NetworkIdentifier, string>();
 
-const SOUNDS_DELAY = 4;
+const SOUNDS_DELAY = 3;
 
 events.packetAfter(MinecraftPacketIds.Login).on(async (pkt, ni) => {
     LAST.set(ni, 0);
@@ -57,6 +57,7 @@ events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
         }
         return CANCEL;
     }
+    COUNT.set(ni, 0);
     LAST.set(ni, Date.now());
 });
 events.packetBefore(MinecraftPacketIds.PlayerAuthInput).on((pkt, ni) => {
