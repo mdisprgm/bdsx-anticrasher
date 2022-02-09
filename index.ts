@@ -20,7 +20,7 @@ ipfilter.setTrafficLimitPeriod(3600);
 
 const Counts = new Map<NetworkIdentifier, number>();
 const Sounds = new Map<NetworkIdentifier, NodeJS.Timeout>();
-const SOUNDS_DELAY = 16;
+const SOUNDS_DELAY = 2;
 
 events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
     if ([12, 26, 35, 42].includes(pkt.sound)) return;
