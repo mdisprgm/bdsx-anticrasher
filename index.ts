@@ -18,51 +18,59 @@ events.serverClose.on(() => {
 ipfilter.setTrafficLimit(1024 * 1024);
 ipfilter.setTrafficLimitPeriod(3600);
 
-const Counts = new Map<NetworkIdentifier, number>();
-const Sounds = new Map<NetworkIdentifier, NodeJS.Timeout>();
-const SOUNDS_DELAY = 2;
+const LAST = new Map<NetworkIdentifier, number>(); //TIME between last and second last chat
+const COUNT = new Map<NetworkIdentifier, number>(); //warning COUNT
 
-events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
-    if ([12, 26, 35, 42].includes(pkt.sound)) return;
-    if (Sounds.has(ni)) {
-        clearTimeout(Sounds.get(ni)!);
-        Sounds.set(
-            ni,
-            setTimeout(() => {
-                Sounds.delete(ni);
-            }, SOUNDS_DELAY)
-        );
-        const nx = (Counts.get(ni) ?? 0) + 1;
-        Counts.set(ni, nx);
-        if (nx > 4) {
-            const ip = ni.getAddress().split("|")[0];
-            serverInstance.disconnectClient(ni, "§cKicked by trying Crasher");
-            if (ip !== "10.10.10.10") {
-                ipfilter.add(ip, 1073741824);
-            }
-        }
+const Addresses = new Map<NetworkIdentifier, string>();
 
-        return CANCEL;
-    } else {
-        Counts.set(ni, 0);
-        Sounds.set(
-            ni,
-            setTimeout(() => {
-                Sounds.delete(ni);
-            }, SOUNDS_DELAY)
-        );
+const SOUNDS_DELAY = 4;
+
+events.packetAfter(MinecraftPacketIds.Login).on(async (pkt, ni) => {
+    LAST.set(ni, 0);
+    COUNT.set(ni, 0);
+
+    Addresses.set(ni, ni.getAddress().split("|")[0]);
+});
+events.networkDisconnected.on(async (ni) => {
+    LAST.delete(ni);
+    COUNT.delete(ni);
+
+    if (banned.has(ni)) {
+        ipfilter.add(Addresses.get(ni)!);
+        Addresses.delete(ni);
+        banned.delete(ni);
     }
 });
 
+const banned = new Set<NetworkIdentifier>();
+
+events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
+    if ([12, 26, 35, 42].includes(pkt.sound)) return;
+
+    if (Date.now() - LAST.get(ni)! < SOUNDS_DELAY) {
+        const next = COUNT.get(ni)!;
+        COUNT.set(ni, next + 1);
+
+        if (next > 4) {
+            const ip = ni.getAddress().split("|")[0];
+            if (ip !== "10.10.10.10") {
+                banned.add(ni);
+            }
+            serverInstance.disconnectClient(ni, "§cKicked by trying Crasher");
+        }
+        return CANCEL;
+    }
+    LAST.set(ni, Date.now());
+});
 events.packetBefore(MinecraftPacketIds.PlayerAuthInput).on((pkt, ni) => {
     switch (true) {
-        case pkt.moveX > 1073741824:
-        case pkt.moveZ > 1073741824:
-        case pkt.pos.x > 1073741824:
-        case pkt.pos.y > 1073741824:
-        case pkt.pos.z > 1073741824:
+        case pkt.moveX > 1073741823:
+        case pkt.moveZ > 1073741823:
+        case pkt.pos.x > 1073741823:
+        case pkt.pos.y > 1073741823:
+        case pkt.pos.z > 1073741823:
             const ip = ni.getAddress().split("|")[0];
-            ipfilter.add(ip, 1073741824);
+            ipfilter.add(ip, 1073741823);
             serverInstance.disconnectClient(ni);
             return CANCEL;
         default:
