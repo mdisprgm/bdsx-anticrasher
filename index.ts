@@ -25,12 +25,23 @@ const Banned = new Map<NetworkIdentifier, string>();
 
 const SOUNDS_DELAY = 3;
 
+/**
+ * Ban client but for the session
+ */
+function addBanned(target: NetworkIdentifier) {
+    if (Banned.has(target)) return;
+
+    const ip = target.getAddress().split("|")[0];
+    if (ip !== "10.10.10.10") Banned.set(target, ip);
+
+    serverInstance.disconnectClient(target, "§cKicked by trying Crasher");
+}
+
 events.packetAfter(MinecraftPacketIds.Login).on(async (pkt, ni) => {
     LAST.set(ni, 0);
     COUNT.set(ni, 0);
-
-    Banned.set(ni, ni.getAddress().split("|")[0]);
 });
+
 events.networkDisconnected.on(async (ni) => {
     LAST.delete(ni);
     COUNT.delete(ni);
@@ -47,14 +58,10 @@ events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
     if (Date.now() - LAST.get(ni)! < SOUNDS_DELAY) {
         const next = COUNT.get(ni)!;
         COUNT.set(ni, next + 1);
-
-        if (next > 4) {
-            const ip = ni.getAddress().split("|")[0];
-            if (ip !== "10.10.10.10") {
-                Banned.set(ni, ip);
-            }
-            serverInstance.disconnectClient(ni, "§cKicked by trying Crasher");
+        if (next > 3) {
+            addBanned(ni);
         }
+
         return CANCEL;
     }
     COUNT.set(ni, 0);
@@ -67,10 +74,16 @@ events.packetBefore(MinecraftPacketIds.PlayerAuthInput).on((pkt, ni) => {
         case pkt.pos.x > 1073741823:
         case pkt.pos.y > 1073741823:
         case pkt.pos.z > 1073741823:
-            const ip = ni.getAddress().split("|")[0];
-            ipfilter.add(ip, 1073741823);
-            serverInstance.disconnectClient(ni);
+            addBanned(ni);
             return CANCEL;
         default:
     }
 });
+
+try {
+    require("bdsx/../../example_and_test/vulnerabilities");
+} catch {
+    console.log(
+        "[ANTICRASHER] Can't found example_and_test/vulnerabilities".red
+    );
+}
