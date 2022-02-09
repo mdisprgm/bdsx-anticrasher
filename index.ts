@@ -21,7 +21,7 @@ ipfilter.setTrafficLimitPeriod(3600);
 const LAST = new Map<NetworkIdentifier, number>(); //TIME between last and second last chat
 const COUNT = new Map<NetworkIdentifier, number>(); //warning COUNT
 
-const Addresses = new Map<NetworkIdentifier, string>();
+const Banned = new Map<NetworkIdentifier, string>();
 
 const SOUNDS_DELAY = 4;
 
@@ -29,20 +29,17 @@ events.packetAfter(MinecraftPacketIds.Login).on(async (pkt, ni) => {
     LAST.set(ni, 0);
     COUNT.set(ni, 0);
 
-    Addresses.set(ni, ni.getAddress().split("|")[0]);
+    Banned.set(ni, ni.getAddress().split("|")[0]);
 });
 events.networkDisconnected.on(async (ni) => {
     LAST.delete(ni);
     COUNT.delete(ni);
 
-    if (banned.has(ni)) {
-        ipfilter.add(Addresses.get(ni)!);
-        Addresses.delete(ni);
-        banned.delete(ni);
+    if (Banned.has(ni)) {
+        ipfilter.add(Banned.get(ni)!);
+        Banned.delete(ni);
     }
 });
-
-const banned = new Set<NetworkIdentifier>();
 
 events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
     if ([12, 26, 35, 42].includes(pkt.sound)) return;
@@ -54,7 +51,7 @@ events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
         if (next > 4) {
             const ip = ni.getAddress().split("|")[0];
             if (ip !== "10.10.10.10") {
-                banned.add(ni);
+                Banned.set(ni, ip);
             }
             serverInstance.disconnectClient(ni, "§cKicked by trying Crasher");
         }
