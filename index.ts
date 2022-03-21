@@ -1,5 +1,6 @@
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
+import { ActorEventPacket } from "bdsx/bds/packets";
 import { serverInstance } from "bdsx/bds/server";
 import { CANCEL } from "bdsx/common";
 import { ipfilter } from "bdsx/core";
@@ -23,7 +24,7 @@ const COUNT = new Map<NetworkIdentifier, number>(); //warning COUNT
 
 const Banned = new Map<NetworkIdentifier, string>();
 
-const SOUNDS_DELAY = 3;
+const DELAY_LIMIT = 3;
 
 /**
  * Ban client but for the session
@@ -55,7 +56,7 @@ events.networkDisconnected.on(async (ni) => {
 events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
     if ([12, 26, 35, 42].includes(pkt.sound)) return;
 
-    if (Date.now() - LAST.get(ni)! < SOUNDS_DELAY) {
+    if (Date.now() - LAST.get(ni)! < DELAY_LIMIT) {
         const next = COUNT.get(ni)!;
         COUNT.set(ni, next + 1);
         if (next > 3) {
@@ -67,6 +68,29 @@ events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
     COUNT.set(ni, 0);
     LAST.set(ni, Date.now());
 });
+
+{
+    const FOOD_LAST = new Map<NetworkIdentifier, number>(); //TIME between last and second last chat
+    const FOOD_COUNT = new Map<NetworkIdentifier, number>(); //warning COUNT
+
+    events.packetBefore(MinecraftPacketIds.ActorEvent).on((pkt, ni) => {
+        const action = pkt.event;
+        if (action !== ActorEventPacket.Events.EatingItem) return;
+
+        if (Date.now() - FOOD_LAST.get(ni)! < DELAY_LIMIT) {
+            const next = FOOD_COUNT.get(ni)!;
+            FOOD_COUNT.set(ni, next + 1);
+            if (next > 3) {
+                addBanned(ni);
+            }
+
+            return CANCEL;
+        }
+        FOOD_COUNT.set(ni, 0);
+        FOOD_LAST.set(ni, Date.now());
+    });
+}
+
 events.packetBefore(MinecraftPacketIds.PlayerAuthInput).on((pkt, ni) => {
     switch (true) {
         case pkt.moveX > 1073741823:
@@ -83,7 +107,5 @@ events.packetBefore(MinecraftPacketIds.PlayerAuthInput).on((pkt, ni) => {
 try {
     require("bdsx/../../example_and_test/vulnerabilities");
 } catch {
-    console.log(
-        "[ANTICRASHER] Can't found example_and_test/vulnerabilities".red
-    );
+    console.log("[ANTICRASHER] Can't found example_and_test/vulnerabilities".red);
 }
