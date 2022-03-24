@@ -72,7 +72,7 @@ export namespace Counter {
         }
     });
     const Banned = new Map<NetworkIdentifier, string>();
-    export function addBanned(target: NetworkIdentifier): void {
+    export function addBanned(target: NetworkIdentifier, message?: string): void {
         if (Banned.has(target)) return;
 
         const ip = target.getAddress().split("|")[0];
@@ -84,6 +84,7 @@ export namespace Counter {
             return;
         }
 
-        serverInstance.disconnectClient(target, "§cKicked by trying Crasher");
+        if (!message) serverInstance.disconnectClient(target, "§cKicked by trying Crasher");
+        else serverInstance.disconnectClient(target, message);
     }
 }
