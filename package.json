@@ -1,9 +1,13 @@
 {
   "name": "@bdsx/anticrasher",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "simple anti-crasher",
   "main": "index.js",
-  "keywords": [],
+  "keywords": [
+    "mdisprgm",
+    "bdsx",
+    "mcbe"
+  ],
   "author": "",
   "license": "MIT",
   "bdsxPlugin": true,

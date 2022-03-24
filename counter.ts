@@ -59,6 +59,9 @@ export class Counter {
         // 처음이면 값 초기화
         else this.pass(subject);
     }
+    addBanned(target: NetworkIdentifier): void {
+        Counter.addBanned(target);
+    }
 }
 
 export namespace Counter {
@@ -69,7 +72,7 @@ export namespace Counter {
         }
     });
     const Banned = new Map<NetworkIdentifier, string>();
-    export function addBanned(target: NetworkIdentifier) {
+    export function addBanned(target: NetworkIdentifier): void {
         if (Banned.has(target)) return;
 
         const ip = target.getAddress().split("|")[0];
