@@ -6,7 +6,7 @@ import { CANCEL } from "bdsx/common";
 import { ipfilter } from "bdsx/core";
 import { events } from "bdsx/event";
 
-console.log("[Anticrasher] allocated", " - mdisprgm".blue);
+console.log("[ANTICRASHER] allocated", " - mdisprgm".blue);
 
 events.serverOpen.on(() => {
     console.log("[ANTICRASHER] launching", " - mdisprgm".blue);
@@ -18,13 +18,12 @@ events.serverClose.on(() => {
 
 ipfilter.setTrafficLimit(1024 * 1024);
 ipfilter.setTrafficLimitPeriod(3600);
+const DELAY_LIMIT = 3;
 
 const LAST = new Map<NetworkIdentifier, number>(); //TIME between last and second last chat
 const COUNT = new Map<NetworkIdentifier, number>(); //warning COUNT
 
 const Banned = new Map<NetworkIdentifier, string>();
-
-const DELAY_LIMIT = 3;
 
 /**
  * Ban client but for the session
@@ -53,22 +52,26 @@ events.networkDisconnected.on(async (ni) => {
     }
 });
 
-events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
-    if ([12, 26, 35, 42].includes(pkt.sound)) return;
+// invalid sound events
+{
+    events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
+        if ([12, 26, 35, 42].includes(pkt.sound)) return;
 
-    if (Date.now() - LAST.get(ni)! < DELAY_LIMIT) {
-        const next = COUNT.get(ni)!;
-        COUNT.set(ni, next + 1);
-        if (next > 3) {
-            addBanned(ni);
+        if (Date.now() - LAST.get(ni)! < DELAY_LIMIT) {
+            const next = COUNT.get(ni)!;
+            COUNT.set(ni, next + 1);
+            if (next > 3) {
+                addBanned(ni);
+            }
+
+            return CANCEL;
         }
+        COUNT.set(ni, 0);
+        LAST.set(ni, Date.now());
+    });
+}
 
-        return CANCEL;
-    }
-    COUNT.set(ni, 0);
-    LAST.set(ni, Date.now());
-});
-
+// invalid eating food
 {
     const FOOD_LAST = new Map<NetworkIdentifier, number>(); //TIME between last and second last chat
     const FOOD_COUNT = new Map<NetworkIdentifier, number>(); //warning COUNT
@@ -91,19 +94,21 @@ events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
     });
 }
 
-events.packetBefore(MinecraftPacketIds.PlayerAuthInput).on((pkt, ni) => {
-    switch (true) {
-        case pkt.moveX > 1073741823:
-        case pkt.moveZ > 1073741823:
-        case pkt.pos.x > 1073741823:
-        case pkt.pos.y > 1073741823:
-        case pkt.pos.z > 1073741823:
-            addBanned(ni);
-            return CANCEL;
-        default:
-    }
-});
-
+// invalid positions
+{
+    events.packetBefore(MinecraftPacketIds.PlayerAuthInput).on((pkt, ni) => {
+        switch (true) {
+            case pkt.moveX > 1073741823:
+            case pkt.moveZ > 1073741823:
+            case pkt.pos.x > 1073741823:
+            case pkt.pos.y > 1073741823:
+            case pkt.pos.z > 1073741823:
+                addBanned(ni);
+                return CANCEL;
+            default:
+        }
+    });
+}
 try {
     require("bdsx/../../example_and_test/vulnerabilities");
 } catch {
