@@ -4,6 +4,7 @@ import { CANCEL } from "bdsx/common";
 import { ipfilter } from "bdsx/core";
 import { events } from "bdsx/event";
 import { Counter } from "./counter";
+import { anticrasher } from "./event";
 
 {
     console.log("[ANTICRASHER] allocated", " - mdisprgm".blue);
@@ -61,3 +62,5 @@ try {
 } catch {
     console.log("[ANTICRASHER] Can't found example_and_test/vulnerabilities".red);
 }
+
+export { anticrasher, Counter };
