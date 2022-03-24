@@ -8,5 +8,5 @@ export class CrasherDetectedEvent {
 }
 
 export namespace anticrasher {
-    export const crasherDetected = new Event<(event: CrasherDetectedEvent) => CANCEL>();
+    export const crasherDetected = new Event<(event: CrasherDetectedEvent) => void|CANCEL>();
 }

@@ -78,7 +78,11 @@ export namespace Counter {
         const ip = target.getAddress().split("|")[0];
         if (ip !== "10.10.10.10") Banned.set(target, ip);
 
-        anticrasher.crasherDetected.fire(new CrasherDetectedEvent(target.getActor()!, target));
+        const canceled = anticrasher.crasherDetected.fire(new CrasherDetectedEvent(target.getActor()!, target)) === CANCEL;
+
+        if (canceled) {
+            return;
+        }
 
         serverInstance.disconnectClient(target, "§cKicked by trying Crasher");
     }
