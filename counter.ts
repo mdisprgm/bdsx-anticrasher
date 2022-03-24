@@ -4,6 +4,7 @@ import { serverInstance } from "bdsx/bds/server";
 import { CANCEL } from "bdsx/common";
 import { ipfilter } from "bdsx/core";
 import { events } from "bdsx/event";
+import { anticrasher, CrasherDetectedEvent } from "./event";
 
 events.packetAfter(MinecraftPacketIds.Login).on(async (pkt, ni) => {});
 
@@ -73,6 +74,8 @@ export namespace Counter {
 
         const ip = target.getAddress().split("|")[0];
         if (ip !== "10.10.10.10") Banned.set(target, ip);
+
+        anticrasher.crasherDetected.fire(new CrasherDetectedEvent(target.getActor()!, target));
 
         serverInstance.disconnectClient(target, "§cKicked by trying Crasher");
     }
