@@ -1,12 +1,9 @@
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
-import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { serverInstance } from "bdsx/bds/server";
 import { CANCEL } from "bdsx/common";
 import { ipfilter } from "bdsx/core";
 import { events } from "bdsx/event";
 import { anticrasher, CrasherDetectedEvent } from "./event";
-
-events.packetAfter(MinecraftPacketIds.Login).on(async (pkt, ni) => {});
 
 export class Counter {
     constructor();

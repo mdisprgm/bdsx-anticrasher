@@ -12,8 +12,8 @@
   "license": "MIT",
   "bdsxPlugin": true,
   "scripts": {
-    "build": "tsc -d",
-    "watch": "tsc -d -w",
+    "build": "tsc -d --removeComments",
+    "watch": "tsc -d --removeComments -w",
     "prepare": "tsc || exit 0"
   },
   "devDependencies": {
