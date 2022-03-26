@@ -19,16 +19,15 @@ import { anticrasher } from "./event";
 ipfilter.setTrafficLimit(1024 * 1024);
 ipfilter.setTrafficLimitPeriod(3600);
 
-const addBanned = Counter.addBanned;
-
-const InvalidSoundCounter = new Counter(3, 3);
-const InvalidFoodCounter = new Counter(3, 3);
+const InvalidSoundsCounter = new Counter(3, 3);
+const FoodSpammerCounter = new Counter(3, 3);
+const IllegalPositionsCounter = new Counter(3, 0);
 
 // invalid sound events
 {
     events.packetBefore(MinecraftPacketIds.LevelSoundEvent).on((pkt, ni) => {
         if ([12, 26, 35, 42].includes(pkt.sound)) return;
-        return InvalidSoundCounter.enter(ni);
+        return InvalidSoundsCounter.enter(ni, anticrasher.Crashers.InvalidSounds);
     });
 }
 
@@ -37,7 +36,7 @@ const InvalidFoodCounter = new Counter(3, 3);
     events.packetBefore(MinecraftPacketIds.ActorEvent).on((pkt, ni) => {
         const action = pkt.event;
         if (action !== ActorEventPacket.Events.EatingItem) return;
-        return InvalidFoodCounter.enter(ni);
+        return FoodSpammerCounter.enter(ni, anticrasher.Crashers.FoodSpammer);
     });
 }
 
@@ -50,7 +49,7 @@ const InvalidFoodCounter = new Counter(3, 3);
             case pkt.pos.x > 0x3fffffff:
             case pkt.pos.y > 0x3fffffff:
             case pkt.pos.z > 0x3fffffff:
-                addBanned(ni);
+                IllegalPositionsCounter.addBanned(ni, anticrasher.Crashers.IllegalPositions);
                 return CANCEL;
             default:
         }

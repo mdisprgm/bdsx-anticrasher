@@ -6,6 +6,9 @@ import { events } from "bdsx/event";
 import { anticrasher, CrasherDetectedEvent } from "./event";
 
 export class Counter {
+    static readonly kickMessage = "§cKicked by trying Crasher";
+    private static Banned = new Map<NetworkIdentifier, string>();
+
     constructor();
     constructor(delay_limit: number, max_warns: number);
     constructor(delay_limit?: number, max_warns?: number) {
@@ -34,7 +37,7 @@ export class Counter {
         this.reset(subject);
     }
 
-    enter(subject: NetworkIdentifier): CANCEL | void {
+    enter(subject: NetworkIdentifier, cause: anticrasher.Crashers = anticrasher.Crashers.Unknown, kickMessage?: string): CANCEL | void {
         const last = this.last_map.get(subject);
         const counts = this.count_map.get(subject);
         this.warn(subject);
@@ -46,7 +49,7 @@ export class Counter {
                 // 여러 번 이면
                 if (counts > this.max_warns) {
                     // 킥
-                    Counter.addBanned(subject);
+                    this.addBanned(subject, cause, kickMessage);
                     this.reset(subject);
                     return CANCEL;
                 }
@@ -56,31 +59,35 @@ export class Counter {
         // 처음이면 값 초기화
         else this.pass(subject);
     }
-    addBanned(target: NetworkIdentifier): void {
-        Counter.addBanned(target);
-    }
-}
 
-export namespace Counter {
-    events.networkDisconnected.on(async (ni) => {
-        if (Banned.has(ni)) {
-            ipfilter.add(Banned.get(ni)!);
-            Banned.delete(ni);
-        }
-    });
-    const Banned = new Map<NetworkIdentifier, string>();
-    export function addBanned(target: NetworkIdentifier, message?: string): void {
-        if (Banned.has(target)) return;
-
+    addBanned(target: NetworkIdentifier, message?: string): void;
+    addBanned(target: NetworkIdentifier, cause: anticrasher.Crashers, message?: string): void;
+    addBanned(target: NetworkIdentifier, messageOrCause?: string | number, messageOpt?: string): void {
+        if (Counter.Banned.has(target)) return;
         const ip = target.getAddress().split("|")[0];
-        if (ip !== "10.10.10.10") Banned.set(target, ip);
+        if (ip !== "10.10.10.10") Counter.Banned.set(target, ip);
 
-        const canceled = anticrasher.crasherDetected.fire(new CrasherDetectedEvent(target.getActor()!, target)) === CANCEL;
+        const event = new CrasherDetectedEvent(target.getActor()!, target, anticrasher.Crashers.Unknown);
+        let message = "";
+
+        if (typeof messageOrCause === "number") {
+            event.crasherType = messageOrCause;
+            message = messageOpt ?? Counter.kickMessage;
+        } else {
+            message = messageOrCause ?? Counter.kickMessage;
+        }
+        const canceled = anticrasher.crasherDetected.fire(event) === CANCEL;
 
         if (canceled) {
             return;
         }
-
-        serverInstance.disconnectClient(target, message ?? "§cKicked by trying Crasher");
+        serverInstance.disconnectClient(target, message);
     }
 }
+
+events.networkDisconnected.on(async (ni) => {
+    if ((Counter as any).Banned.has(ni)) {
+        ipfilter.add((Counter as any).Banned.get(ni)!);
+        (Counter as any).Banned.delete(ni);
+    }
+});
