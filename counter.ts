@@ -84,7 +84,6 @@ export namespace Counter {
             return;
         }
 
-        if (!message) serverInstance.disconnectClient(target, "§cKicked by trying Crasher");
-        else serverInstance.disconnectClient(target, message);
+        serverInstance.disconnectClient(target, message ?? "§cKicked by trying Crasher");
     }
 }
