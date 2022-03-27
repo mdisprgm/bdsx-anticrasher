@@ -63,10 +63,6 @@ export class Counter {
     addBanned(target: NetworkIdentifier, message?: string): void;
     addBanned(target: NetworkIdentifier, cause: anticrasher.Crashers, message?: string): void;
     addBanned(target: NetworkIdentifier, messageOrCause?: string | number, messageOpt?: string): void {
-        if (Counter.Banned.has(target)) return;
-        const ip = target.getAddress().split("|")[0];
-        if (ip !== "10.10.10.10") Counter.Banned.set(target, ip);
-
         const event = new CrasherDetectedEvent(target.getActor()!, target, anticrasher.Crashers.Unknown);
         let message = "";
 
@@ -81,6 +77,10 @@ export class Counter {
         if (canceled) {
             return;
         }
+
+        if (Counter.Banned.has(target)) return;
+        const ip = target.getAddress().split("|")[0];
+        if (ip !== "10.10.10.10") Counter.Banned.set(target, ip);
         serverInstance.disconnectClient(target, message);
     }
 }
