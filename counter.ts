@@ -1,8 +1,8 @@
 import { NetworkIdentifier } from "bdsx/bds/networkidentifier";
-import { serverInstance } from "bdsx/bds/server";
 import { CANCEL } from "bdsx/common";
 import { ipfilter } from "bdsx/core";
 import { events } from "bdsx/event";
+import { bedrockServer } from "bdsx/launcher";
 import { anticrasher, CrasherDetectedEvent } from "./event";
 
 export class Counter {
@@ -81,7 +81,7 @@ export class Counter {
         if (Counter.Banned.has(target)) return;
         const ip = target.getAddress().split("|")[0];
         if (ip !== "10.10.10.10") Counter.Banned.set(target, ip);
-        serverInstance.disconnectClient(target, message);
+        bedrockServer.serverInstance.disconnectClient(target, message);
     }
 }
 
