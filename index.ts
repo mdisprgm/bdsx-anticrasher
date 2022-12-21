@@ -56,6 +56,16 @@ const IllegalPositionsCounter = new Counter(3, 0);
     });
 }
 
+{
+    const WrongSkinBlocker = new Counter(70, 2);
+    events.packetRaw(MinecraftPacketIds.PlayerSkin).on((ptr, size, ni, id) => {
+        if (size < 0x400) {
+            WrongSkinBlocker.enter(ni, anticrasher.Crashers.InvalidSkin);
+            return CANCEL;
+        }
+    });
+}
+
 try {
     require("bdsx/../../example_and_test/vulnerabilities");
 } catch {

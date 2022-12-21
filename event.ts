@@ -15,5 +15,6 @@ export namespace anticrasher {
         IllegalPositions,
         InvalidSounds,
         FoodSpammer,
+        InvalidSkin,
     }
 }
