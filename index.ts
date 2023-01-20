@@ -1,8 +1,12 @@
+import { NetworkConnection, NetworkHandler } from "bdsx/bds/networkidentifier";
 import { MinecraftPacketIds } from "bdsx/bds/packetids";
 import { ActorEventPacket } from "bdsx/bds/packets";
 import { CANCEL } from "bdsx/common";
-import { ipfilter } from "bdsx/core";
+import { ipfilter, VoidPointer } from "bdsx/core";
 import { events } from "bdsx/event";
+import { int32_t, void_t } from "bdsx/nativetype";
+import { CxxStringWrapper } from "bdsx/pointer";
+import { procHacker } from "bdsx/prochacker";
 import { Counter } from "./counter";
 import { anticrasher } from "./event";
 
@@ -66,10 +70,39 @@ const IllegalPositionsCounter = new Counter(3, 0);
     });
 }
 
-try {
-    require("bdsx/../../example_and_test/vulnerabilities");
-} catch {
-    console.log("[ANTICRASHER] Can't found example_and_test/vulnerabilities".red);
+(function blockEmptyData(): void {
+    const disconnectConnection = procHacker.js("?disconnect@NetworkConnection@@QEAAXXZ", void_t, null, NetworkConnection);
+    const receivePacket = procHacker.hooking(
+        "?receivePacket@NetworkConnection@@QEAA?AW4DataStatus@NetworkPeer@@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVNetworkHandler@@AEBV?$shared_ptr@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@5@@Z",
+        int32_t, // DataStatus
+        null,
+        NetworkConnection,
+        CxxStringWrapper,
+        NetworkHandler,
+        VoidPointer, // std::shared_ptr<std::chrono::time_point>
+    )((conn, stream, networkHandler, time_point) => {
+        if (!stream.length) {
+            disconnectConnection(conn);
+            return 1;
+        }
+        return receivePacket(conn, stream, networkHandler, time_point);
+    });
+})();
+
+{
+    //
+    // example_and_test/vulnerabilities.ts
+    //
+
+    events.packetRaw(MinecraftPacketIds.ClientCacheBlobStatus).on((ptr, size, netId) => {
+        if (ptr.readVarUint() >= 0xfff || ptr.readVarUint() >= 0xfff) {
+            console.log(("DOS (ClientCacheBlobStatus) detected from " + netId).red);
+            return CANCEL;
+        }
+    });
+    events.packetBefore(MinecraftPacketIds.Disconnect).on((pkt, ni) => {
+        if (ni.getActor() == null) return CANCEL;
+    });
 }
 
 export { anticrasher, Counter };
