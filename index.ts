@@ -8,7 +8,7 @@ import { int32_t, void_t } from "bdsx/nativetype";
 import { CxxStringWrapper } from "bdsx/pointer";
 import { procHacker } from "bdsx/prochacker";
 import { Counter } from "./counter";
-import { anticrasher } from "./event";
+import { anticrasher, CrasherDetectedEvent } from "./event";
 
 {
     console.log("[ANTICRASHER] allocated", " - mdisprgm".blue);
@@ -69,9 +69,9 @@ const IllegalPositionsCounter = new Counter(3, 0);
         }
     });
 }
-
-(function blockEmptyData(): void {
+{
     const disconnectConnection = procHacker.js("?disconnect@NetworkConnection@@QEAAXXZ", void_t, null, NetworkConnection);
+    const counter: Record<string, number> = {};
     const receivePacket = procHacker.hooking(
         "?receivePacket@NetworkConnection@@QEAA?AW4DataStatus@NetworkPeer@@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVNetworkHandler@@AEBV?$shared_ptr@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@5@@Z",
         int32_t, // DataStatus
@@ -81,14 +81,20 @@ const IllegalPositionsCounter = new Counter(3, 0);
         NetworkHandler,
         VoidPointer, // std::shared_ptr<std::chrono::time_point>
     )((conn, stream, networkHandler, time_point) => {
-        if (!stream.length) {
+        const ni = conn.networkIdentifier;
+        const addr = ni.getAddress();
+        const id = stream.valueptr.getUint8();
+        if (counter[addr] > 1 || id === MinecraftPacketIds.PurchaseReceipt) {
+            anticrasher.crasherDetected.fire(new CrasherDetectedEvent(undefined, ni, anticrasher.Crashers.DisallowedPacket));
             disconnectConnection(conn);
             return 1;
         }
+        if (id === 0) {
+            counter[addr] = counter[addr] ? counter[addr] + 1 : 1;
+        }
         return receivePacket(conn, stream, networkHandler, time_point);
     });
-})();
-
+}
 {
     //
     // example_and_test/vulnerabilities.ts

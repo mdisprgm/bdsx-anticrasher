@@ -4,7 +4,7 @@ import { CANCEL } from "bdsx/common";
 import { Event } from "bdsx/eventtarget";
 
 export class CrasherDetectedEvent {
-    constructor(public crasher: Player, public networkIdentifier: NetworkIdentifier, public crasherType: anticrasher.Crashers) {}
+    constructor(public crasher: Player | undefined, public networkIdentifier: NetworkIdentifier, public crasherType: anticrasher.Crashers) {}
 }
 
 export namespace anticrasher {
@@ -16,5 +16,6 @@ export namespace anticrasher {
         InvalidSounds,
         FoodSpammer,
         InvalidSkin,
+        DisallowedPacket,
     }
 }
