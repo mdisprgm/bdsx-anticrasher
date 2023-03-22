@@ -73,7 +73,7 @@ const IllegalPositionsCounter = new Counter(3, 0);
     const disconnectConnection = procHacker.js("?disconnect@NetworkConnection@@QEAAXXZ", void_t, null, NetworkConnection);
     const counter: Record<string, number> = {};
     const receivePacket = procHacker.hooking(
-        "?receivePacket@NetworkConnection@@QEAA?AW4DataStatus@NetworkPeer@@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVNetworkHandler@@AEBV?$shared_ptr@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@5@@Z",
+        "?receivePacket@NetworkConnection@@QEAA?AW4DataStatus@NetworkPeer@@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVNetworkSystem@@AEBV?$shared_ptr@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@5@@Z",
         int32_t, // DataStatus
         null,
         NetworkConnection,
